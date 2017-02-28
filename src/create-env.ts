@@ -5,15 +5,22 @@ import * as fs from 'fs';
 import * as mkdirp from 'mkdirp';
 import * as appRoot from 'app-root-path';
 
-export function createEnv(opts: any) {
+export type EnvResult = {
+    fusebox: FuseBox,
+    project: any,
+    projectContents: any,
+};
+
+export function createEnv(opts: any): Promise<EnvResult> {
     const name = opts.name || `hih-test-${new Date().getTime()}`;
-    let tmpFolder = path.join(appRoot.path, ".fusebox", "tests");
+    let tmpFolder = path.join(appRoot.path, '.fusebox', 'tests');
     mkdirp(tmpFolder)
     let localPath = path.join(tmpFolder, name);
     const output: any = {
         modules: {}
     }
-    const modulesFolder = path.join(localPath, "modules");
+    const modulesFolder = path.join(localPath, 'modules');
+    let fusebox;
     // creating modules
     return each(opts.modules, (moduleParams, name) => {
         return new Promise((resolve, reject) => {
@@ -36,23 +43,27 @@ export function createEnv(opts: any) {
         });
     }).then(() => {
         const projectOptions = opts.project;
-        projectOptions.outFile = path.join(localPath, "project", "index.js");
-        projectOptions.cache = false;
+        projectOptions.outFile = path.join(localPath, 'project', 'index.js');
+        if (projectOptions.cache === undefined) {
+            projectOptions.cache = false;
+        }
         projectOptions.log = false;
-        projectOptions.tsConfig = path.join(appRoot.path, "test", "fixtures", "tsconfig.json")
+        projectOptions.tsConfig = path.join(appRoot.path, 'tsconfig.json')
         projectOptions.modulesFolder = modulesFolder;
         return new Promise((resolve, reject) => {
-            FuseBox.init(projectOptions).bundle(projectOptions.instructions, () => {
+            fusebox = FuseBox.init(projectOptions);
+            fusebox.bundle(projectOptions.instructions, () => {
                 const contents = fs.readFileSync(projectOptions.outFile);
                 const length = contents.buffer.byteLength;
                 output.project = require(projectOptions.outFile);
                 output.projectSize = length;
                 output.projectContents = contents;
+                output.fusebox = fusebox;
                 return resolve();
-            })
+            });
         });
     }).then(() => {
         //deleteFolderRecursive(localPath);
         return output;
-    })
+    });
 }

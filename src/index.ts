@@ -10,7 +10,7 @@ export interface ChainOptions {
 
 export class FuseboxChainPlugin implements Plugin {
 
-	public test = /.*/;
+	public test;
 
 	private static defaultOptions = {};
 	private options: ChainOptions;
@@ -37,15 +37,20 @@ export class FuseboxChainPlugin implements Plugin {
 		}
 		if (this.options.test) {
 			this.test = this.options.test;
+		} else if (this.plugins.length > 0) {
+			this.test = this.plugins[0].test;
 		}
 	}
 
 	public transform(file: File) {
-		let cached = this.context.cache.getStaticCache(file);
-		if (cached) {
-			file.isLoaded = true;
-			file.contents = cached.contents;
-			return;
+		let useCache = this.context.useCache;
+		if (useCache) {
+			let cached = this.context.cache.getStaticCache(file);
+			if (cached) {
+				file.isLoaded = true;
+				file.contents = cached.contents;
+				return;
+			}
 		}
 		file.loadContents();
 		let p = Promise.resolve();
@@ -54,9 +59,16 @@ export class FuseboxChainPlugin implements Plugin {
 			p = p.then(() => plugin.transform(file));
 		}
 		p.then(() => {
-			this.context.cache.writeStaticCache(file, file.sourceMap);
-			// TODO: emit sourceChangedEmitter
+			if (useCache) {
+				this.context.cache.writeStaticCache(file, file.sourceMap);
+			}
+			this.context.sourceChangedEmitter.emit({
+				type: null,
+				content: file.contents,
+				path: file.info.fuseBoxPath,
+			})
 		});
+		return p;
 	}
 }
 
