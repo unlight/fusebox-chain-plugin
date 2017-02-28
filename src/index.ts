@@ -40,6 +40,21 @@ export class FuseboxChainPlugin implements Plugin {
 		} else if (this.plugins.length > 0) {
 			this.test = this.plugins[0].test;
 		}
+		this.plugins
+			.filter(p => p.init)
+			.forEach(p => p.init(context));
+	}
+
+	bundleStart(context: WorkFlowContext) {
+		this.plugins
+			.filter(p => p.bundleStart)
+			.forEach(p => p.bundleStart(context));
+	}
+
+	bundleEnd(context: WorkFlowContext) {
+		this.plugins
+			.filter(p => p.bundleEnd)
+			.forEach(p => p.bundleEnd(context));
 	}
 
 	public transform(file: File) {
