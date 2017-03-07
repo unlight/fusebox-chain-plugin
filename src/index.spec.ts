@@ -1,8 +1,9 @@
 /// <reference path='../node_modules/@types/mocha/index.d.ts' />
 /// <reference path='../node_modules/@types/node/index.d.ts' />
 import { ChainPlugin as Plugin } from './index';
-import { FuseBox as FuseBoxClass, RawPlugin, JSONPlugin, WorkFlowContext, SassPlugin, CSSPlugin } from 'fuse-box';
-import { File } from 'fuse-box/dist/typings/File';
+import { FuseBox as FuseBoxClass, RawPlugin, JSONPlugin, SassPlugin, CSSPlugin } from 'fuse-box';
+import { File } from 'fuse-box/dist/typings/core/File';
+import { WorkFlowContext } from 'fuse-box/dist/typings/core/WorkFlowContext';
 import { createEnv } from './create-env';
 import assert = require('assert');
 
@@ -11,7 +12,7 @@ it('smoke', () => {
     assert(createEnv);
 });
 
-it('fusebox project', async () => {
+it('smoke project', async () => {
     const output = await createEnv({
         project: {
             plugins: [
@@ -50,7 +51,7 @@ it('plugin simple test', async () => {
     assert.equal(lorem, 'lorem ipsum');
 });
 
-it('sass and css plugin', async () => {
+it('sass and css plugin (no cache)', async () => {
     const output = await createEnv({
         project: {
             files: {
