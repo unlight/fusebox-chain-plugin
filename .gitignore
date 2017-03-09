@@ -2,4 +2,4 @@
 ~*
 /.fusebox/
 /lib/
-
+*.sublime-*

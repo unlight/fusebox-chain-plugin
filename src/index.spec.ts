@@ -12,7 +12,7 @@ it('smoke', () => {
     assert(createEnv);
 });
 
-it('smoke project', async () => {
+it('fusebox project', async () => {
     const output = await createEnv({
         project: {
             plugins: [
