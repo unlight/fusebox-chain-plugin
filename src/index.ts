@@ -1,6 +1,7 @@
 import { Plugin, WorkFlowContext } from 'fuse-box/dist/typings/core/WorkflowContext';
 import { File } from 'fuse-box/dist/typings/core/File';
 import * as assert from 'assert';
+import createCache from './cache';
 
 export interface ChainOptions {
 	extension?: string;
@@ -11,12 +12,11 @@ export interface ChainOptions {
 export class FuseboxChainPlugin implements Plugin {
 
 	public test;
-
 	private static defaultOptions = {};
 	private options: ChainOptions;
-
 	private plugins: Plugin[] = [];
 	private context: WorkFlowContext;
+	private cache = createCache();
 
 	constructor(options, items) {
 		if (items === undefined) {
@@ -60,12 +60,15 @@ export class FuseboxChainPlugin implements Plugin {
 	public transform(file: File) {
 		let useCache = this.context.useCache;
 		if (useCache) {
-			
-			// TODO: Replace by custom cache.
-			let cached = this.context.cache.getStaticCache(file);
+			let cached = this.cache.get(file.absPath);
 			if (cached) {
 				file.isLoaded = true;
 				file.contents = cached.contents;
+				file.sourceMap = cached.sourceMap;
+				file.alternativeContent = cached.alternativeContent;
+				file.headerContent = cached.headerContent;
+				file.analysis.dependencies = cached.dependencies;
+				file.analysis.skip();
 				return;
 			}
 		}
@@ -77,7 +80,13 @@ export class FuseboxChainPlugin implements Plugin {
 		}
 		p.then(() => {
 			if (useCache) {
-				this.context.cache.writeStaticCache(file, file.sourceMap);
+				this.cache.put(file.absPath, {
+					contents: file.contents,
+					sourceMap: file.sourceMap,
+					alternativeContent: file.alternativeContent,
+					headerContent: file.headerContent,
+					dependencies: file.analysis.dependencies,
+				});
 			}
 			this.context.sourceChangedEmitter.emit({
 				type: null,

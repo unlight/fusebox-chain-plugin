@@ -26,8 +26,9 @@
     "memory-fs": "0.4.1",
     "mocha": "3.2.0",
     "node-sass": "4.5.0",
+    "pkg-dir": "^1.0.0",
     "ts-node": "2.1.0",
-    "typescript": "2.2.1"
+    "typescript": "^2.2.1"
   },
   "dependencies": {},
   "directories": {

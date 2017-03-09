@@ -1,11 +1,14 @@
 /// <reference path='../node_modules/@types/mocha/index.d.ts' />
 /// <reference path='../node_modules/@types/node/index.d.ts' />
 import { ChainPlugin as Plugin } from './index';
-import { FuseBox as FuseBoxClass, RawPlugin, JSONPlugin, SassPlugin, CSSPlugin } from 'fuse-box';
+import { FuseBox, RawPlugin, JSONPlugin, SassPlugin, CSSPlugin } from 'fuse-box';
 import { File } from 'fuse-box/dist/typings/core/File';
 import { WorkFlowContext } from 'fuse-box/dist/typings/core/WorkFlowContext';
 import { createEnv } from './create-env';
 import assert = require('assert');
+import pkgDir = require('pkg-dir');
+import * as Path from 'path';
+import createCache from './cache';
 
 it('smoke', () => {
     assert(Plugin);
@@ -64,7 +67,7 @@ it('sass and css plugin (no cache)', async () => {
             },
             plugins: [
                 // [SassPlugin({ sourceMap: false, outputStyle: 'compressed' }), CSSPlugin()]
-                Plugin({extensions: ['.scss']}, [
+                Plugin({ extensions: ['.scss'] }, [
                     SassPlugin({ sourceMap: false, outputStyle: 'compressed' }),
                     CSSPlugin(),
                 ])
@@ -79,32 +82,33 @@ it('sass and css plugin (no cache)', async () => {
 });
 
 
-it.skip('should cache', async () => {
-    let fileMap = new Map();
-    const output = await createEnv({
-        project: {
-            cache: true,
-            files: {
-                'index.ts': `
-                    global.__fsbx_css = function() {}
-                    require('./a.scss');`,
-                'a.scss': 'body {color:red};',
-            },
-            plugins: [
-                Plugin({ extensions: ['.scss'] }, [
-                    SassPlugin({ sourceMap: false, outputStyle: 'compressed' }),
-                    CSSPlugin(),
-                    {
-                        transform: (file: File) => fileMap.set(file.info.fuseBoxPath, file)
-                    },
-                ])
-            ],
-            instructions: '>index.ts'
+it('should cache', (done) => {
+    const fileMap = new Map();
+    const plugin = Plugin({ extensions: ['.scss'] }, [
+        SassPlugin({ sourceMap: false, outputStyle: 'compressed' }),
+        CSSPlugin(),
+        {
+            transform: (file: File) => {
+                fileMap.set(file.info.fuseBoxPath, file.absPath);
+            }
         }
+    ]);
+    const cache = (plugin as any).cache;
+    const fusebox = FuseBox.init({
+        cache: true,
+        log: false,
+        homeDir: Path.join(pkgDir.sync(), 'fixtures', 'cache1'),
+        outFile: Path.join(pkgDir.sync(), '.fusebox', 'cache1.js'),
+        plugins: [plugin],
     });
-    const FuseBox = output.project.FuseBox;
-    const fusebox = output.fusebox;
-    let [[path, file]] = Array.from(fileMap.entries());
-    let cached = fusebox.context.cache.getStaticCache(file);
-    assert(cached);
+    fusebox.bundle('>index.js')
+        .then(d => {
+            let content: string = d.content.toString();
+            assert(content.includes('__fsbx_css("a.scss", "body{color:red}'));
+            let filePath = fileMap.get('a.scss');
+            let cached = cache.get(filePath);
+            assert(cached);
+            done();
+        })
+        .catch(done);
 });
