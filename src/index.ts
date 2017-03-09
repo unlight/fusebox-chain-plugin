@@ -60,6 +60,8 @@ export class FuseboxChainPlugin implements Plugin {
 	public transform(file: File) {
 		let useCache = this.context.useCache;
 		if (useCache) {
+			
+			// TODO: Replace by custom cache.
 			let cached = this.context.cache.getStaticCache(file);
 			if (cached) {
 				file.isLoaded = true;
