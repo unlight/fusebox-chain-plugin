@@ -7,6 +7,7 @@ import { WorkFlowContext } from 'fuse-box/dist/typings/core/WorkFlowContext';
 import { createEnv } from './create-env';
 import assert = require('assert');
 import pkgDir = require('pkg-dir');
+import del = require('del');
 import * as Path from 'path';
 import createCache from './cache';
 
@@ -83,8 +84,10 @@ it('sass and css plugin (no cache)', async () => {
 
 
 it('should cache', (done) => {
+    const outFile = Path.join(pkgDir.sync(), '.fusebox', 'cache1.js');
+    del.sync(outFile);
     const fileMap = new Map();
-    const plugin = Plugin({ extensions: ['.scss'] }, [
+    const plugin = Plugin([
         SassPlugin({ sourceMap: false, outputStyle: 'compressed' }),
         CSSPlugin(),
         {
@@ -98,7 +101,7 @@ it('should cache', (done) => {
         cache: true,
         log: false,
         homeDir: Path.join(pkgDir.sync(), 'fixtures', 'cache1'),
-        outFile: Path.join(pkgDir.sync(), '.fusebox', 'cache1.js'),
+        outFile: outFile,
         plugins: [plugin],
     });
     fusebox.bundle('>index.js')
