@@ -10,7 +10,7 @@
         "inlineSourceMap": true,
         "pretty": true,
         "lib": [
-            "es6"
+            "es7"
         ]
     },
     "include": [

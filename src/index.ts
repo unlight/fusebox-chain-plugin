@@ -2,30 +2,73 @@ import { Plugin, WorkFlowContext } from 'fuse-box/dist/typings/core/WorkflowCont
 import { File } from 'fuse-box/dist/typings/core/File';
 import * as assert from 'assert';
 import createCache from './cache';
+import endsWith = require('lodash/endsWith');
+import find = require('lodash/find');
+import values = require('lodash/values');
+import flatten = require('lodash/flatten');
 
 export interface ChainOptions {
 	extension?: string;
 	extensions?: string[];
 	test?: RegExp;
+	hmr?: boolean;
+	hmrType?: string;
 }
 
 export class FuseboxChainPlugin implements Plugin {
 
 	public test;
+	public hmrType = null;
 	private static defaultOptions = {};
 	private options: ChainOptions;
 	private plugins: Plugin[] = [];
 	private context: WorkFlowContext;
 	private cache = createCache();
+	private conditions: any;
+	private hmrPlugins: string[] = [
+		'RawPluginClass',
+	];
+	private hmr: boolean = false;
 
-	constructor(options, items) {
+	constructor(items: any[]);
+	constructor(options: any, items: any[]);
+
+	constructor(options, items?) {
 		if (items === undefined) {
 			items = options;
 			options = FuseboxChainPlugin.defaultOptions;
 		}
-		assert(Array.isArray(items), 'Array is expected');
-		this.plugins = items;
+		if (Array.isArray(items)) {
+			this.plugins = items;
+		} else if (items && typeof items === 'object') {
+			this.conditions = items;
+		}
 		this.options = options;
+		if (this.options.hmr !== undefined) {
+			this.hmr = Boolean(this.options.hmr);
+		}
+		if (this.options.hmrType) {
+			this.hmrType = this.options.hmrType;
+		}
+		if (this.options.test) {
+			this.test = this.options.test;
+		} else if (this.plugins.length > 0) {
+			this.test = this.plugins[0].test;
+		}
+	}
+
+	private get triggerPlugins() {
+		let result = this.plugins;
+		if (this.conditions) {
+			let pluginClassList = [];
+			result = flatten<Plugin>(values(this.conditions))
+				.filter(p => {
+					if (pluginClassList.indexOf(p.constructor) !== -1) return false;
+					pluginClassList.push(p.constructor);
+					return true;
+				});
+		}
+		return result;
 	}
 
 	public init(context: WorkFlowContext) {
@@ -35,24 +78,19 @@ export class FuseboxChainPlugin implements Plugin {
 		} else if (this.options.extensions && this.options.extensions.length > 0) {
 			this.options.extensions.forEach(ext => context.allowExtension(ext));
 		}
-		if (this.options.test) {
-			this.test = this.options.test;
-		} else if (this.plugins.length > 0) {
-			this.test = this.plugins[0].test;
-		}
-		this.plugins
+		this.triggerPlugins
 			.filter(p => p.init)
 			.forEach(p => p.init(context));
 	}
 
 	bundleStart(context: WorkFlowContext) {
-		this.plugins
+		this.triggerPlugins
 			.filter(p => p.bundleStart)
 			.forEach(p => p.bundleStart(context));
 	}
 
 	bundleEnd(context: WorkFlowContext) {
-		this.plugins
+		this.triggerPlugins
 			.filter(p => p.bundleEnd)
 			.forEach(p => p.bundleEnd(context));
 	}
@@ -73,10 +111,14 @@ export class FuseboxChainPlugin implements Plugin {
 			}
 		}
 		file.loadContents();
-		let p = Promise.resolve();
-		for (let i = 0; i < this.plugins.length; i++) {
-			let plugin = this.plugins[i];
-			p = p.then(() => plugin.transform(file));
+		let p: Promise<void>;
+		let plugins: Plugin[];
+		if (this.conditions) {
+			plugins = find<Plugin[]>(this.conditions, (value, key: string) => endsWith(file.info.fuseBoxPath, key));
+			p = plugins.reduce((p, plugin) => p.then(() => plugin.transform(file)), Promise.resolve());
+		} else {
+			plugins = this.plugins;
+			p = this.plugins.reduce((p, plugin) => p.then(() => plugin.transform(file)), Promise.resolve());
 		}
 		p.then(() => {
 			if (useCache) {
@@ -87,8 +129,16 @@ export class FuseboxChainPlugin implements Plugin {
 					headerContent: file.headerContent,
 					dependencies: file.analysis.dependencies,
 				});
+				if (!this.hmr) {
+					return;
+				}
+				let [lastPlugin] = plugins.slice(-1);
+				let isLastPluginHmr = find(this.hmrPlugins, name => name === (lastPlugin.constructor && lastPlugin.constructor.name));
+				if (isLastPluginHmr) {
+					return;
+				}
 				this.context.sourceChangedEmitter.emit({
-					type: null,
+					type: this.hmrType,
 					content: file.contents,
 					path: file.info.fuseBoxPath,
 				});

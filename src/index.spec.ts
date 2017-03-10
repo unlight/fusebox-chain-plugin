@@ -114,3 +114,58 @@ it('should cache', (done) => {
         })
         .catch(done);
 });
+
+it('inline sass', (done) => {
+    const outFile = Path.join(pkgDir.sync(), '.fusebox', 'inline-sass.js');
+    del.sync(outFile);
+    const plugin = Plugin([
+        SassPlugin({ sourceMap: false, outputStyle: 'compressed' }),
+        RawPlugin({}),
+    ]);
+    const fusebox = FuseBox.init({
+        cache: false,
+        log: false,
+        homeDir: Path.join(pkgDir.sync(), 'fixtures', 'inline-sass'),
+        outFile: outFile,
+        plugins: [plugin],
+    });
+    fusebox.bundle('>index.js')
+        .then(d => {
+            let content: string = d.content.toString();
+            assert(content.includes(`module.exports = "body{color:blue}`));
+            done();
+        })
+        .catch(done);
+});
+
+it('conditionally', async () => {
+    const output = await createEnv({
+        project: {
+            files: {
+                'index.js': `
+                    global.__fsbx_css = () => {};
+                    require('./global.scss'); 
+                    require('./a.component.scss')`,
+                'a.component.scss': '* {color:blue}',
+                'global.scss': 'h1 {color:red}'
+            },
+            plugins: [
+                Plugin({ extensions: ['.scss'], test: /\.scss$/ }, {
+                    '.component.scss': [
+                        SassPlugin({ sourceMap: false, outputStyle: 'compressed' }),
+                        RawPlugin({}),
+                    ],
+                    '.scss': [
+                        SassPlugin({ sourceMap: false, outputStyle: 'compressed' }),
+                        CSSPlugin(),
+                    ]
+                })
+            ],
+            instructions: '>index.js'
+        }
+    });
+    const FuseBox = output.project.FuseBox;
+    const projectContents = output.projectContents.toString();
+    assert(projectContents.includes(`__fsbx_css("global.scss", "h1{color:red}`));
+    assert(projectContents.includes(`module.exports = "*{color:blue}`));
+});
