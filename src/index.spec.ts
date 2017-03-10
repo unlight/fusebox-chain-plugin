@@ -82,7 +82,6 @@ it('sass and css plugin (no cache)', async () => {
     assert(projectContents.includes('__fsbx_css("b.scss", "h1{color:red}'));
 });
 
-
 it('should cache', (done) => {
     const outFile = Path.join(pkgDir.sync(), '.fusebox', 'cache1.js');
     del.sync(outFile);
