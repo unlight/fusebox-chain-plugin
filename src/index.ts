@@ -87,12 +87,12 @@ export class FuseboxChainPlugin implements Plugin {
 					headerContent: file.headerContent,
 					dependencies: file.analysis.dependencies,
 				});
+				this.context.sourceChangedEmitter.emit({
+					type: null,
+					content: file.contents,
+					path: file.info.fuseBoxPath,
+				});
 			}
-			this.context.sourceChangedEmitter.emit({
-				type: null,
-				content: file.contents,
-				path: file.info.fuseBoxPath,
-			})
 		});
 		return p;
 	}
