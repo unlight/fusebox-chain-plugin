@@ -3,7 +3,7 @@
 import { ChainPlugin as Plugin } from './index';
 import { FuseBox, RawPlugin, JSONPlugin, SassPlugin, CSSPlugin } from 'fuse-box';
 import { File } from 'fuse-box/dist/typings/core/File';
-import { WorkFlowContext } from 'fuse-box/dist/typings/core/WorkFlowContext';
+import { WorkFlowContext } from 'fuse-box/dist/typings/core/WorkflowContext';
 import { createEnv } from './create-env';
 import assert = require('assert');
 import pkgDir = require('pkg-dir');
