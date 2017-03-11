@@ -15,6 +15,10 @@ export interface ChainOptions {
 	hmrType?: string;
 }
 
+export function ChainPlugin(options, plugins?) {
+	return new FuseboxChainPlugin(options, plugins);
+}
+
 export class FuseboxChainPlugin implements Plugin {
 
 	public test;
@@ -25,6 +29,7 @@ export class FuseboxChainPlugin implements Plugin {
 	private context: WorkFlowContext;
 	private cache = createCache();
 	private conditions: any;
+	private hmr: boolean = true;
 	private hmrPlugins: string[] = [
 		'CSSPluginClass',
 		'RawPluginClass',
@@ -32,7 +37,6 @@ export class FuseboxChainPlugin implements Plugin {
 		'VuePluginClass',
 		'FuseBoxHTMLPlugin',
 	];
-	private hmr: boolean = false;
 
 	constructor(items: any[]);
 	constructor(options: any, items: any[]);
@@ -61,18 +65,24 @@ export class FuseboxChainPlugin implements Plugin {
 		}
 	}
 
+	private _triggerPlugins;
+
 	private get triggerPlugins() {
-		let result = this.plugins;
-		if (this.conditions) {
-			let pluginClassList = [];
-			result = flatten<Plugin>(values(this.conditions))
-				.filter(p => {
-					if (pluginClassList.indexOf(p.constructor) !== -1) return false;
-					pluginClassList.push(p.constructor);
-					return true;
-				});
+		if (this._triggerPlugins === undefined) {
+			this._triggerPlugins = this.plugins;
+			if (this.conditions) {
+				let pluginClassList = [];
+				this._triggerPlugins = flatten<Plugin>(values(this.conditions))
+					.filter(p => {
+						if (pluginClassList.indexOf(p.constructor) !== -1) {
+							return false;
+						}
+						pluginClassList.push(p.constructor);
+						return true;
+					});
+			}
 		}
-		return result;
+		return this._triggerPlugins;
 	}
 
 	public init(context: WorkFlowContext) {
@@ -87,13 +97,13 @@ export class FuseboxChainPlugin implements Plugin {
 			.forEach(p => p.init(context));
 	}
 
-	bundleStart(context: WorkFlowContext) {
+	public bundleStart(context: WorkFlowContext) {
 		this.triggerPlugins
 			.filter(p => p.bundleStart)
 			.forEach(p => p.bundleStart(context));
 	}
 
-	bundleEnd(context: WorkFlowContext) {
+	public bundleEnd(context: WorkFlowContext) {
 		this.triggerPlugins
 			.filter(p => p.bundleEnd)
 			.forEach(p => p.bundleEnd(context));
@@ -115,43 +125,36 @@ export class FuseboxChainPlugin implements Plugin {
 			}
 		}
 		file.loadContents();
-		let p: Promise<void>;
 		let plugins: Plugin[];
 		if (this.conditions) {
 			plugins = find<Plugin[]>(this.conditions, (value, key: string) => endsWith(file.info.fuseBoxPath, key));
-			p = plugins.reduce((p, plugin) => p.then(() => plugin.transform(file)), Promise.resolve());
 		} else {
 			plugins = this.plugins;
-			p = this.plugins.reduce((p, plugin) => p.then(() => plugin.transform(file)), Promise.resolve());
 		}
-		p.then(() => {
-			if (useCache) {
-				this.cache.put(file.absPath, {
-					contents: file.contents,
-					sourceMap: file.sourceMap,
-					alternativeContent: file.alternativeContent,
-					headerContent: file.headerContent,
-					dependencies: file.analysis.dependencies,
-				});
-				if (!this.hmr) {
-					return;
+		return plugins.reduce((p, plugin) => p.then(() => plugin.transform(file)), Promise.resolve())
+			.then(() => {
+				if (useCache) {
+					this.cache.put(file.absPath, {
+						contents: file.contents,
+						sourceMap: file.sourceMap,
+						alternativeContent: file.alternativeContent,
+						headerContent: file.headerContent,
+						dependencies: file.analysis.dependencies,
+					});
+					if (!this.hmr) {
+						return;
+					}
+					let [lastPlugin] = plugins.slice(-1);
+					let isLastPluginHmr = find(this.hmrPlugins, name => name === (lastPlugin.constructor && lastPlugin.constructor.name));
+					if (isLastPluginHmr) {
+						return;
+					}
+					this.context.sourceChangedEmitter.emit({
+						type: this.hmrType,
+						content: file.contents,
+						path: file.info.fuseBoxPath,
+					});
 				}
-				let [lastPlugin] = plugins.slice(-1);
-				let isLastPluginHmr = find(this.hmrPlugins, name => name === (lastPlugin.constructor && lastPlugin.constructor.name));
-				if (isLastPluginHmr) {
-					return;
-				}
-				this.context.sourceChangedEmitter.emit({
-					type: this.hmrType,
-					content: file.contents,
-					path: file.info.fuseBoxPath,
-				});
-			}
-		});
-		return p;
+			});
 	}
-}
-
-export function ChainPlugin(options, plugins?) {
-	return new FuseboxChainPlugin(options, plugins);
 }
