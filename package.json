@@ -1,6 +1,6 @@
 {
   "name": "fusebox-chain-plugin",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Custom chain plugin for FuseBox",
   "main": "lib",
   "typings": "lib",
