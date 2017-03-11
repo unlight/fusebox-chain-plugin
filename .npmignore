@@ -2,5 +2,6 @@
 ~*
 /.fusebox/
 /src/
+/fixtures/
 /tsconfig.json
 *.sublime-*
