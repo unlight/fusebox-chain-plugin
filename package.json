@@ -23,8 +23,7 @@
     "@types/node": "7.0.8",
     "concurrently": "3.4.0",
     "del": "2.2.2",
-    "fuse-box": "^1.3.126",
-    "memory-fs": "0.4.1",
+    "fuse-box": "1.3.126",
     "mocha": "3.2.0",
     "node-sass": "4.5.0",
     "pkg-dir": "1.0.0",
@@ -32,6 +31,7 @@
     "typescript": "2.2.1"
   },
   "dependencies": {
+    "memory-fs": "0.4.1",
     "lodash": "^4.17.4"
   },
   "directories": {
