@@ -26,7 +26,11 @@ export class FuseboxChainPlugin implements Plugin {
 	private cache = createCache();
 	private conditions: any;
 	private hmrPlugins: string[] = [
+		'CSSPluginClass',
 		'RawPluginClass',
+		'BabelPluginClass',
+		'VuePluginClass',
+		'FuseBoxHTMLPlugin',
 	];
 	private hmr: boolean = false;
 
