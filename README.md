@@ -55,6 +55,12 @@ ChainPlugin(options: Options, plugins: Plugin[] | { [k: string]: Plugin[] });
 	which will be emitted (this is non-usual case and you need custom *frontend* fusebox plugin
 	to handle HMR properly).
 
+#### Plugin[]
+Array of fusebox plugins.
+
+#### { [k: string]: Plugin[] }
+Split transform pipiline by extension.
+
 DEBUG
 ---
 * Debug benchmark `inspect node_modules\ts-node\dist\_bin.js benchmarks\benchmark.ts`
