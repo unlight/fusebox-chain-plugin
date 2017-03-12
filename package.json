@@ -9,6 +9,7 @@
     "compile": "tsc",
     "compile:w": "tsc -w",
     "benchmarks": "ts-node -F benchmarks/benchmark.ts",
+    "pretest": "npm run compile",
     "test": "npm run t",
     "t": "npm run mocha -- src/*.spec.ts",
     "test:w": "npm run mocha -- --watch src/*.spec.ts ",

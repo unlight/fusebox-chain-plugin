@@ -7,7 +7,7 @@ import find = require('lodash/find');
 import values = require('lodash/values');
 import flatten = require('lodash/flatten');
 
-export interface ChainOptions {
+export interface Options {
 	extension?: string;
 	extensions?: string[];
 	test?: RegExp;
@@ -15,7 +15,11 @@ export interface ChainOptions {
 	hmrType?: string;
 }
 
-export function ChainPlugin(options, plugins?) {
+export type Plugins = Plugin[] | { [k: string]: Plugin[] };
+
+export function ChainPlugin(plugins: Plugins);
+export function ChainPlugin(options: Options, plugins: Plugins);
+export function ChainPlugin(options: Options, plugins?: any) {
 	return new FuseboxChainPlugin(options, plugins);
 }
 
@@ -23,8 +27,7 @@ export class FuseboxChainPlugin implements Plugin {
 
 	public test;
 	public hmrType = null;
-	private static defaultOptions = {};
-	private options: ChainOptions;
+	private options: Options;
 	private plugins: Plugin[] = [];
 	private context: WorkFlowContext;
 	private cache = createCache();
@@ -44,7 +47,7 @@ export class FuseboxChainPlugin implements Plugin {
 	constructor(options, items?) {
 		if (items === undefined) {
 			items = options;
-			options = FuseboxChainPlugin.defaultOptions;
+			options = {};
 		}
 		if (Array.isArray(items)) {
 			this.plugins = items;
