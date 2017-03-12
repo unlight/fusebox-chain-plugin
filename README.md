@@ -21,6 +21,18 @@ plugins: [
 	])
 ]
 ```
+```ts
+ChainPlugin({ extension: '.scss', test: /\.scss$/ }, {
+    '.component.scss': [
+        SassPlugin({ sourceMap: false }),
+        RawPlugin({}),
+    ],
+    '.scss': [
+        SassPlugin({}),
+        CSSPlugin(),
+    ]
+}),
+```
 
 API
 ---

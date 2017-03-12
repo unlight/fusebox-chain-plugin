@@ -43,5 +43,13 @@
   "keywords": [
     "fuse-box"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unlight/fusebox-chain-plugin.git"
+  },
+  "bugs": {
+    "url": "https://github.com/unlight/fusebox-chain-plugin/issues"
+  },
+  "homepage": "https://github.com/unlight/fusebox-chain-plugin#readme"
 }
