@@ -2,20 +2,23 @@ import memoryFs = require('memory-fs');
 import * as fs from 'fs';
 import * as Path from 'path';
 
-export default function createCache(mfs = new memoryFs(), statSync = fs.statSync) {
+function createMtime() {
+	return function mtime(path: string) {
+		return fs.statSync(path).mtime.getTime();
+	};
+}
+
+export default function createCache(mfs = new memoryFs(), mtime = createMtime()) {
 	return {
-		mtime(path: string) {
-			return statSync(path).mtime.getTime();
-		},
 		put(path: string, content: Object) {
-			content['mtime'] = this.mtime(path);
+			content['mtime'] = mtime(path);
 			mfs.mkdirpSync(Path.dirname(path));
 			return mfs.writeFileSync(path, JSON.stringify(content));
 		},
 		get(path: string) {
 			if (mfs.existsSync(path)) {
 				let result = JSON.parse(mfs.readFileSync(path));
-				if (result.mtime === this.mtime(path)) {
+				if (result.mtime === mtime(path)) {
 					return result;
 				}
 			}

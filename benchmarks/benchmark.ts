@@ -1,28 +1,38 @@
 /// <reference path='../node_modules/@types/node/index.d.ts' />
-/// <reference path='../node_modules/@types/benchmark/index.d.ts' />
-import { Suite } from 'benchmark';
 import memoryFs = require('memory-fs');
+import * as Path from 'path';
 
 const mfs = new memoryFs();
-const testPath = `/Dev/fusebox-chain-plugin/component/main.scss`;
+const testPath = `/component/main.scss`;
 const encodedTestPath = '/' + encodeURIComponent(testPath);
 
-new Suite('memoryfs existsSync')
-	.add('full', function() {
+mfs.mkdirpSync(Path.dirname(testPath));
+mfs.mkdirpSync(Path.dirname(encodedTestPath));
+mfs.writeFileSync(testPath, 'thigmotropism');
+mfs.writeFileSync(encodedTestPath, 'thigmotropism');
+
+const nperf = require('nperf');
+
+nperf(1000)
+	.test('full path', () => {
 		mfs.existsSync(testPath);
+		mfs.readFileSync(testPath);
 	})
-	.add('encoded', function() {
-		// decodeURIComponent(encodedTestPath).slice(1);
+	.test('encoded path', () => {
 		mfs.existsSync(encodedTestPath);
+		mfs.readFileSync(encodedTestPath);
 	})
-	.on('start', ({currentTarget}) => {
-		console.log(`${currentTarget.name} benchmark:`);
+	.test('trycatch full', () => {
+		try {
+			mfs.readFileSync(testPath);
+		} catch (e) {
+		}
 	})
-	.on('cycle', function(event) {
-		console.log(String(event.target));
+	.test('trycatch encoded', () => {
+		encodeURIComponent(encodedTestPath);
+		try {
+			mfs.readFileSync(encodedTestPath);
+		} catch (e) {
+		}
 	})
-	.on('complete', ({currentTarget}) => {
-		console.log(`${currentTarget.filter('fastest').map('name')} is fastest`);
-	})
-	// run async
-	.run({ 'async': true });
+	.run();
