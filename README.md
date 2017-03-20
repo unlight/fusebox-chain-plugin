@@ -1,6 +1,5 @@
 # fusebox-chain-plugin
 
-[![Greenkeeper badge](https://badges.greenkeeper.io/unlight/fusebox-chain-plugin.svg)](https://greenkeeper.io/)
 Custom chain plugin for FuseBox
 
 INSTALL
