@@ -1,10 +1,9 @@
 /// <reference path='../node_modules/@types/mocha/index.d.ts' />
-/// <reference path='../node_modules/@types/node/index.d.ts' />
 import { ChainPlugin as Plugin } from './index';
 import { FuseBox, RawPlugin, JSONPlugin, SassPlugin, CSSPlugin } from 'fuse-box';
 import { File } from 'fuse-box/dist/typings/core/File';
 import { WorkFlowContext } from 'fuse-box/dist/typings/core/WorkflowContext';
-import { createEnv } from './create-env';
+import { createEnv } from './env.spec';
 import assert = require('assert');
 import pkgDir = require('pkg-dir');
 import del = require('del');

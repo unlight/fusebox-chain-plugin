@@ -1,3 +1,4 @@
+/// <reference path='../node_modules/@types/node/index.d.ts' />
 import { Plugin, WorkFlowContext } from 'fuse-box/dist/typings/core/WorkflowContext';
 import { File } from 'fuse-box/dist/typings/core/File';
 import * as assert from 'assert';

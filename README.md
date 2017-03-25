@@ -1,6 +1,10 @@
 # fusebox-chain-plugin
+Custom chain plugin for FuseBox.
 
-Custom chain plugin for FuseBox
+FEATURES
+---
+* Cache chained plugins
+* Conditional compilation
 
 INSTALL
 ---
@@ -22,6 +26,8 @@ plugins: [
 	])
 ]
 ```
+### Conditional compilation
+All `.component.scss` files will be inlined, others `.scss` handles like usual css.
 ```ts
 ChainPlugin({ extension: '.scss', test: /\.scss$/ }, {
     '.component.scss': [

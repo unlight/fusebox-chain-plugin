@@ -3,6 +3,7 @@
 /.fusebox/
 /src/
 /fixtures/
+/benchmarks/
 /tsconfig.json
-*.sublime-*
+~*
 /.npmignore
